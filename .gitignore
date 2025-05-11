@@ -177,4 +177,4 @@ cython_debug/
 .idx/.data
 .vscode/
 
-.idea
+.idea/
