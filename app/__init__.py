@@ -1,20 +1,22 @@
-import os
 from flask import Flask
 from flask_jwt_extended import JWTManager
+from flask_sqlalchemy import SQLAlchemy
+from app.models import init_app as init_db
+import config
 from app.utils.helpers import api_response
-from datetime import timedelta
 
 
 def created_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SECRET_KEY", "dev_secret_key"),
-        JWT_SECRET_KEY=os.environ.get("JWT_SECRET_KEY", "jwt_secret_key"),
-        JWT_ACCESS_TOKEN_EXPIRES=timedelta(hours=24),
-    )
+    app = Flask(__name__)
 
-    # Khởi tạo JWT Manager
+    # Load config
+    app.config.from_object(config.Config)
+
+    # Initialize extensions
     jwt = JWTManager(app)
+
+    # Initialize database
+    init_db(app)
 
     @jwt.unauthorized_loader
     def missing_token_callback(callback):
