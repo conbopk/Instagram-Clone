@@ -1,4 +1,5 @@
 from flask import jsonify
+from datetime import datetime, timezone
 
 
 def api_response(data=None, message=None, status=200):
@@ -15,4 +16,5 @@ def api_response(data=None, message=None, status=200):
 
     return jsonify(response), status
 
-
+def utc_now():
+    return datetime.now(timezone.utc)
