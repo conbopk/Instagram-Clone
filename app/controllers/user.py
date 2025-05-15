@@ -3,6 +3,7 @@ from app.utils.helpers import api_response
 from flask import request
 from app.utils.storage import upload_file_to_gcs, delete_file_from_gcs
 from app.models import db
+from app.models.follow import Follow
 
 
 def get_profile(current_user):
@@ -22,7 +23,6 @@ def update_profile(current_user, data):
     # If no fields to update, return error
     if not fields_to_update:
         return api_response(message="No fields to update", status=400)
-
 
     # Update profile
     # Check if username or email already exists
@@ -78,3 +78,103 @@ def get_user_profile(current_user, user_id):
     user_data['is_followed_by'] = current_user.is_followed_by(user)
 
     return api_response(data=user_data, message="User profile fetched successfully")
+
+
+def follow_single_user(current_user, user_id):
+    if current_user.id == user_id:
+        return api_response(message="You cannot follow yourself", status=400)
+
+    user_to_follow = User.query.get(user_id)
+    if not user_to_follow:
+        return api_response(message="User not found", status=404)
+
+    if current_user.follow(user_to_follow):
+        db.session.commit()
+        return api_response(message=f"You are now following {user_to_follow.username}")
+    else:
+        return api_response(message=f"You are already following {user_to_follow.username}")
+
+
+def unfollow_single_user(current_user, user_id):
+    if current_user.id == user_id:
+        return api_response(message="You cannot unfollow yourself", status=400)
+
+    user_to_unfollow = User.query.get(user_id)
+    if not user_to_unfollow:
+        return api_response(message="User not found", status=404)
+
+    if current_user.unfollow(user_to_unfollow):
+        db.session.commit()
+        return api_response(message=f"You have unfollowed {user_to_unfollow.username}")
+    else:
+        return api_response(message=f"You are not following {user_to_unfollow.username}")
+
+
+def get_followers(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return api_response(message="User not found", status=404)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+    followers_query = user.followers.join(User, User.id == Follow.follower_id).with_entities(User).paginate(page=page, per_page=per_page)
+
+    followers = [u.to_dict() for u in followers_query.items]
+
+    data_response = {
+        'followers': followers,
+        'total': followers_query.total,
+        'pages': followers_query.pages,
+        'page': page
+    }
+
+    return api_response(data=data_response)
+
+
+def get_following(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return api_response(message="User not found", status=404)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+    following_query = user.following.join(User, User.id == Follow.followed_id).with_entities(User).paginate(page=page, per_page=per_page)
+
+    following = [u.to_dict() for u in following_query.items]
+
+    data_response = {
+        'following': following,
+        'total': following_query.total,
+        'pages': following_query.pages,
+        'page': page
+    }
+
+    return api_response(data=data_response)
+
+
+def search_any_users():
+    query = request.args.get('q', '')
+    if not query or len(query) < 2:
+        return api_response(message='Search query must be at least 2 characters', status=400)
+
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+    # Search by username or fullname
+    users_query = User.query.filter(
+        (User.username.like(f'%{query}%')) | (User.full_name.like(f'%{query}%'))
+    ).paginate(page=page, per_page=per_page)
+
+    users = [u.to_dict() for u in users_query.items]
+
+    data_response = {
+        'users': users,
+        'total': users_query.total,
+        'pages': users_query.pages,
+        'page': page
+    }
+
+    return api_response(data=data_response, message="Search successfully")
+

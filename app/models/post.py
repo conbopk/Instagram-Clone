@@ -20,6 +20,9 @@ class Post(db.Model):
         self.image_url = image_url
         self.user_id = user_id
 
+    def __repr__(self):
+        return f''
+
     def to_dict(self, include_user=False):
         data = {
             'id': self.id,
@@ -27,6 +30,7 @@ class Post(db.Model):
             'image_url': self.image_url,
             'user_id': self.user_id,
             'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
             'like_count': self.likes.count(),
             'liked_by_current_user': False      # Default value, will be updated in controller
         }

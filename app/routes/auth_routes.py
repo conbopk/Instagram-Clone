@@ -5,7 +5,7 @@ from app.utils.helpers import api_response
 from app.models.user import User
 
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @auth_bp.route('/register', methods=['POST'])
 def register():

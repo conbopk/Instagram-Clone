@@ -1,4 +1,3 @@
-import os
 from google.cloud import storage
 from werkzeug.utils import secure_filename
 from flask import current_app
