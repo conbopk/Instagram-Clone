@@ -1,9 +1,11 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from app.models import init_app as init_db
+from app.routes import init_app as init_routes
 import config
 from app.utils.helpers import api_response
+
 
 
 def created_app(test_config=None):
@@ -15,8 +17,14 @@ def created_app(test_config=None):
     # Initialize extensions
     jwt = JWTManager(app)
 
+    # Enable CORS
+    CORS(app)
+
     # Initialize database
     init_db(app)
+
+    # Initialize routes
+    init_routes(app)
 
     @jwt.unauthorized_loader
     def missing_token_callback(callback):
@@ -30,14 +38,6 @@ def created_app(test_config=None):
     def invalid_token_callback(reason):
         return api_response(message=f"Invalid token: {reason}", status=401)
 
-    # Đăng ký các route
-    from app.routes.auth_routes import auth_bp
-    from app.routes.user_routes import user_bp
-    from app.routes.post_routes import post_bp
-
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(post_bp)
 
     # Route chính
     @app.route('/')
@@ -46,7 +46,11 @@ def created_app(test_config=None):
 
     @app.errorhandler(404)
     def not_found(e):
-        return api_response(message="Endpoint not found", status=404)
+        return api_response(message=f"Endpoint not found: {e}", status=404)
+
+    @app.errorhandler(500)
+    def server_error(e):
+        return api_response(message=f"Internal server error {e}", status=500)
 
     return app
 

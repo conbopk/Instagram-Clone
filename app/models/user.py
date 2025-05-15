@@ -2,6 +2,7 @@ from app.models import db
 from app.models.follow import Follow
 from app.utils.helpers import utc_now
 from werkzeug.security import check_password_hash, generate_password_hash
+from flask import url_for
 
 
 class User(db.Model):
@@ -13,7 +14,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(100))
     bio = db.Column(db.Text)
-    profile_image = db.Column(db.String(255), default='images/default.jpg')
+    profile_image = db.Column(db.String(255), default='static/images/default.png')
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
@@ -57,8 +58,9 @@ class User(db.Model):
             'username': self.username,
             'full_name': self.full_name,
             'bio': self.bio,
-            'profile_image': self.profile_image,
+            'profile_image': url_for('static', filename=self.profile_image.replace('static', ''), _external=True),
             'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
             'follower_count': self.followers.count(),
             'following_count': self.following.count(),
             'post_count': self.posts.count()
