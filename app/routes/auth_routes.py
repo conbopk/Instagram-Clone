@@ -35,7 +35,6 @@ def refresh():
         }
     )
 
-
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_me():
